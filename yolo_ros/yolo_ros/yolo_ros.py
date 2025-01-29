@@ -29,21 +29,20 @@ class Yolo_ros (rclpy.node.Node):
         super().__init__('Yolo_ros')
         
         # list of COCO class indices that we want to output. Defaults to all
-        self.interest_classes = self.get_parameter_or("interest_classes", [*range(80)])  
+        self.interest_classes = self.load_param("interest_classes", [*range(80)])  
         
-        self.publish_visualization = self.get_parameter_or("publish_visualization", True) 
-        visualization_topic = self.get_parameter_or("visualization_topic", "/yolo/segmentedImage")
+        self.publish_visualization = self.load_param("publish_visualization", True) 
+        visualization_topic = self.load_param("visualization_topic", "/yolo/segmentedImage")
         self.visualization_pub = self.create_publisher(sensor_msgs.msg.Image, visualization_topic, 1)
 
         self.cv_bridge = CvBridge()
-
-        MODEL_FILE=self.get_parameter_or("model_file", "yolov9e-seg.pt")
+        
+        MODEL_FILE=self.load_param("model_file", "yolov9e-seg.pt")
         self.set_up_yolo(MODEL_FILE)
 
         self.segment_image_srv =  self.create_service(SegmentImage, "/yolo/segment", self.segment_image)
         self._logger.info("Done setting up!")
         self._logger.info(f"Advertising service: {self.segment_image_srv.srv_name}")
-
 
 
     def set_up_yolo(self, MODEL_FILE):
@@ -132,6 +131,11 @@ class Yolo_ros (rclpy.node.Node):
 
         return detection
 
+
+    def load_param(self, param, default=None):
+        param_value = self.declare_parameter(param, default).value
+        # self.get_logger().info("{}: {}".format(param, param_value))
+        return param_value
 
 
 def main(args=None):
