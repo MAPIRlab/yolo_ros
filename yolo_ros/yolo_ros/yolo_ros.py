@@ -81,11 +81,22 @@ class Yolo_ros (rclpy.node.Node):
         results_list = self.yolo.predict(numpy_image, conf=conf)
 
         for result in results_list:       
-            
-            for mask, box in zip(result.masks.xy, result.boxes):
+            if result.masks is  None or result.boxes is None: 
+                continue
 
+            for mask, box in zip(result.masks.xy, result.boxes):
+                # Get the mask pixel coordinates in the right format to be used as indices
+                mask = np.int32([mask])[0]
+                col0 = mask[:, 0]
+                col1 = mask[:, 1]
+                mask[:, 0] = col1
+                mask[:, 1] = col0
+                
                 semantic_instance = SemanticInstance2D()
-                semantic_instance.mask = self.cv_bridge.cv2_to_imgmsg(np.int32([mask])) #!
+                msg_mask = np.zeros(result.masks.orig_shape, dtype="uint8")
+                msg_mask[mask[:, :]] = 255
+
+                semantic_instance.mask = self.cv_bridge.cv2_to_imgmsg(msg_mask)
                 class_id = int(box.cls[0])
                 semantic_instance.detection = self.set_singleclass_detection(result.names[class_id], box.conf[0], box)
 
