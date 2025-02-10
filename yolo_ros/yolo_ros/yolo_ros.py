@@ -85,15 +85,11 @@ class Yolo_ros (rclpy.node.Node):
 
             for mask, box in zip(result.masks.xy, result.boxes):
                 # Get the mask pixel coordinates in the right format to be used as indices
-                mask = np.int32([mask])[0]
-                col0 = mask[:, 0]
-                col1 = mask[:, 1]
-                mask[:, 0] = col1
-                mask[:, 1] = col0
+                mask = np.int32([mask])
                 
                 semantic_instance = SemanticInstance2D()
                 msg_mask = np.zeros(result.masks.orig_shape, dtype="uint8")
-                msg_mask[mask[:, :]] = 255
+                cv2.fillPoly(msg_mask, mask, 255)
 
                 semantic_instance.mask = self.cv_bridge.cv2_to_imgmsg(msg_mask)
                 class_id = int(box.cls[0])
